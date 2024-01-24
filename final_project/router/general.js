@@ -85,9 +85,32 @@ public_users.get('/review/:isbn',function (req, res) {
 // Sample endpoint to get the list of books from an external API
 const getBooksEndpoint = 'https://api-endpoint/books';
 
-const getBooks = () => {
+const getBooks = async () => {
+    try {
+        const response = await axios.get(getBooksEndpoint);
+        return response.data;
+    } catch (error) {
+        throw error;
+    }
+};
+
+public_users.get('/books', async (req, res) => {
+    try {
+        const books = await getBooks();
+        res.status(200).json({ books });
+    } catch (error) {
+        res.status(500).json({ error: 'Unable to fetch books' });
+    }
+});
+
+
+
+//the code for getting the book details based on ISBN using promise callbacks with Axios.
+const getBookDetailsEndpoint = 'https://api-endpoint/books';
+
+const getBookDetails = (isbn) => {
     return new Promise((resolve, reject) => {
-        axios.get(getBooksEndpoint)
+        axios.get(`${getBookDetailsEndpoint}/${isbn}`)
             .then(response => {
                 resolve(response.data);
             })
@@ -97,40 +120,16 @@ const getBooks = () => {
     });
 };
 
-public_users.get('/books', (req, res) => {
-    getBooks()
-        .then(books => {
-            res.status(200).json({ books });
-        })
-        .catch(error => {
-            res.status(500).json({ error: 'Unable to fetch books' });
-        });
-});
-
-
-
-//the code for getting the book details based on ISBN using async-await with Axios.
-// Assume there is an endpoint for getting book details by ISBN
-const getBookDetailsByISBN = 'https://api-endpoint/books';
-
-const getBookDetails = async (isbn) => {
-    try {
-        const response = await axios.get(`${getBookDetailsByISBN}/${isbn}`);
-        return response.data;
-    } catch (error) {
-        throw error;
-    }
-};
-
-public_users.get('/book/:isbn', async (req, res) => {
+public_users.get('/book/:isbn', (req, res) => {
     const isbn = req.params.isbn;
 
-    try {
-        const bookDetails = await getBookDetails(isbn);
-        res.status(200).json({ bookDetails });
-    } catch (error) {
-        res.status(500).json({ error: 'Unable to fetch book details' });
-    }
+    getBookDetails(isbn)
+        .then(bookDetails => {
+            res.status(200).json({ bookDetails });
+        })
+        .catch(error => {
+            res.status(500).json({ error: 'Unable to fetch book details' });
+        });
 });
 
 
